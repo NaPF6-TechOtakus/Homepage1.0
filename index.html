@@ -1,0 +1,2215 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NaPF6 - 个人主页</title>
+  <style>
+    :root {
+      --color-bg: #eeeeee;
+      --color-primary: #334f52;
+      --color-secondary: #7b888e;
+      --color-brand: #35bfab;
+      --color-brand-secondary: #1fc9e7;
+      --color-border: #ffffff;
+      --color-card: rgba(255, 255, 255, 0.4);
+      --color-article: rgba(255, 255, 255, 0.8);
+      --font-averia: Georgia, "Times New Roman", serif;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      cursor: url('images/cursor.svg') 2 1, auto;
+    }
+
+    body {
+      font-family: "PingFang SC", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Microsoft YaHei", sans-serif;
+      background: var(--color-bg);
+      color: var(--color-primary);
+      min-height: 100vh;
+      line-height: 1.5;
+      overflow-x: hidden;
+    }
+
+    /* 背景 Canvas */
+    .bg-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .bg-layer canvas {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* 主容器 */
+    .main-board {
+      position: relative;
+      z-index: 10;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 40px 20px;
+    }
+
+    .board-inner {
+      position: relative;
+      width: 910px;
+      height: 750px;
+      flex-shrink: 0;
+    }
+
+    /* 通用卡片 */
+    .card {
+      position: absolute;
+      background-color: var(--color-card);
+      -webkit-backdrop-filter: blur(4px);
+      backdrop-filter: blur(4px);
+      border: 1px solid var(--color-border);
+      border-radius: 48px;
+      box-shadow:
+        0 40px 50px -32px rgba(0, 0, 0, 0.05),
+        inset 0 0 20px rgba(255, 255, 255, 0.25);
+      padding: 24px;
+      transition: transform 0.35s ease, box-shadow 0.35s ease;
+      overflow: hidden;
+      /* 入场动画初始状态 */
+      opacity: 0;
+      transform: scale(0.92) translateY(24px);
+    }
+
+    .card.entered {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+      transition: opacity 0.55s ease, transform 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow:
+        0 50px 60px -28px rgba(0, 0, 0, 0.08),
+        inset 0 0 20px rgba(255, 255, 255, 0.3);
+    }
+
+    .font-averia {
+      font-family: var(--font-averia);
+    }
+
+    .text-primary { color: var(--color-primary); }
+    .text-secondary { color: var(--color-secondary); }
+    .text-brand { color: var(--color-brand); }
+
+    .text-linear {
+      background:
+        linear-gradient(to right bottom, rgba(0,0,0,0.15) 0%, rgba(170,170,170,0.05)),
+        linear-gradient(to right bottom, var(--color-brand) 40%, var(--color-brand-secondary));
+      -webkit-text-fill-color: transparent;
+      -webkit-background-clip: text;
+      background-clip: text;
+    }
+
+    .bg-linear {
+      background: linear-gradient(to right bottom, var(--color-brand), var(--color-brand-secondary));
+      color: #fff;
+    }
+
+    /* 左侧导航卡片 */
+    .nav-card {
+      left: 0;
+      top: 60px;
+      width: 260px;
+      height: 390px;
+      border-radius: 64px;
+    }
+
+    .nav-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+
+    .nav-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      box-shadow: 0 12px 20px -5px #E2D9CE;
+    }
+
+    .nav-site-name {
+      font-family: var(--font-averia);
+      font-size: 22px;
+      font-weight: 500;
+      color: var(--color-primary);
+    }
+
+    .nav-status {
+      font-size: 11px;
+      color: var(--color-brand);
+      font-weight: 500;
+    }
+
+    .nav-label {
+      text-transform: uppercase;
+      font-size: 13px;
+      color: var(--color-secondary);
+      margin-bottom: 12px;
+      letter-spacing: 0.5px;
+    }
+
+    .nav-menu {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      position: relative;
+    }
+
+    .nav-highlight {
+      position: absolute;
+      left: 0;
+      width: 100%;
+      height: 44px;
+      border-radius: 999px;
+      background: linear-gradient(to right bottom, #fff 70%, rgba(255,255,255,0.4) 100%);
+      border: 1px solid #fff;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.04);
+      z-index: 0;
+      transition: top 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+      pointer-events: none;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 18px;
+      border-radius: 999px;
+      color: var(--color-secondary);
+      text-decoration: none;
+      font-size: 15px;
+      transition: color 0.25s ease;
+      position: relative;
+      z-index: 1;
+    }
+
+    .nav-item:hover,
+    .nav-item.active {
+      color: var(--color-primary);
+    }
+
+    .nav-item.active {
+      color: var(--color-primary);
+      font-weight: 600;
+    }
+
+    .nav-item svg {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+    }
+
+    /* 照片墙 */
+    .photo-card {
+      left: 290px;
+      top: 60px;
+      width: 370px;
+      height: 210px;
+      padding: 10px;
+      border-radius: 48px;
+      cursor: pointer;
+      transition: transform 0.35s ease, box-shadow 0.35s ease;
+    }
+
+    .photo-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 24px 48px -16px rgba(0, 0, 0, 0.12);
+    }
+
+    .photo-card img {
+      width: 100%;
+      height: 100%;
+      border-radius: 38px;
+      object-fit: cover;
+    }
+
+    /* 欢迎卡片 */
+    .welcome-card {
+      left: 290px;
+      top: 290px;
+      width: 370px;
+      height: 260px;
+      border-radius: 64px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .welcome-avatar {
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      box-shadow: 0 16px 32px -5px #E2D9CE;
+      margin-bottom: 14px;
+    }
+
+    .greeting {
+      font-family: var(--font-averia);
+      font-size: 22px;
+      color: var(--color-primary);
+      line-height: 1.4;
+    }
+
+    .greeting .name {
+      font-size: 30px;
+      font-weight: 500;
+    }
+
+    /* 社交链接条 */
+    .social-bar {
+      position: absolute;
+      left: 290px;
+      top: 570px;
+      width: 370px;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      align-items: center;
+      transition: opacity 0.35s ease, transform 0.35s ease;
+    }
+
+    .social-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      border-radius: 16px;
+      background: var(--color-card);
+      border: 1px solid #fff;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+      text-decoration: none;
+      color: var(--color-primary);
+      font-size: 13px;
+      transition: all 0.25s ease;
+      -webkit-backdrop-filter: blur(4px);
+      backdrop-filter: blur(4px);
+    }
+
+    .social-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px rgba(0,0,0,0.08);
+    }
+
+    .social-btn svg {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+    }
+
+    .social-btn.github {
+      background: #070707;
+      color: #fff;
+      border-color: #070707;
+      font-family: var(--font-averia);
+      font-size: 16px;
+      box-shadow: inset 0 0 12px rgba(255,255,255,0.4);
+    }
+
+    .social-icon-btn {
+      width: 44px;
+      height: 44px;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* 最新文章 */
+    .latest-card {
+      left: 0;
+      top: 480px;
+      width: 260px;
+      height: 180px;
+      border-radius: 48px;
+    }
+
+    .card-label {
+      font-size: 13px;
+      color: var(--color-secondary);
+      margin-bottom: 12px;
+    }
+
+    .article-item {
+      display: flex;
+      gap: 12px;
+      text-decoration: none;
+      color: inherit;
+      transition: opacity 0.25s ease;
+    }
+
+    .article-item:hover {
+      opacity: 0.8;
+    }
+
+    .article-thumb {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.6);
+      object-fit: cover;
+      flex-shrink: 0;
+      background: var(--color-article);
+    }
+
+    .article-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--color-primary);
+      margin-bottom: 4px;
+      display: -webkit-box;
+      -webkit-line-clamp: 1;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .article-desc {
+      font-size: 12px;
+      color: var(--color-secondary);
+      line-height: 1.45;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .article-date {
+      font-size: 11px;
+      color: var(--color-secondary);
+      margin-top: 6px;
+    }
+
+    /* 我的作品卡片（首页左下角） */
+    .works-entry-card {
+      left: 0;
+      top: 480px;
+      width: 260px;
+      height: 160px;
+      border-radius: 48px;
+      cursor: pointer;
+      transition: transform 0.35s ease, box-shadow 0.35s ease;
+    }
+
+    .works-entry-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 40px -14px rgba(0, 0, 0, 0.10),
+                  inset 0 0 20px rgba(255, 255, 255, 0.25);
+    }
+
+    .works-entry-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      gap: 8px;
+    }
+
+    .works-entry-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, var(--color-brand), var(--color-brand-secondary));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .works-entry-icon svg {
+      width: 24px;
+      height: 24px;
+    }
+
+    .works-entry-label {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--color-primary);
+    }
+
+    .works-entry-hint {
+      font-size: 12px;
+      color: var(--color-secondary);
+      opacity: 0.7;
+    }
+
+    .recommend-card {
+      display: none;
+    }
+
+    /* 时钟 */
+    .clock-card {
+      left: 690px;
+      top: 60px;
+      width: 220px;
+      height: 130px;
+      border-radius: 64px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .clock-inner {
+      width: 100%;
+      height: 100%;
+      border-radius: 48px;
+      background: rgba(123, 136, 142, 0.15);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .clock-time {
+      font-family: "SF Mono", "Cascadia Code", "Consolas", "Courier New", monospace;
+      font-size: 36px;
+      font-weight: 600;
+      color: var(--color-primary);
+      text-align: center;
+    }
+
+    .clock-label {
+      font-size: 11px;
+      color: var(--color-secondary);
+      margin-top: 4px;
+    }
+
+    /* 日历 */
+    .calendar-card {
+      left: 690px;
+      top: 210px;
+      width: 220px;
+      height: 290px;
+      border-radius: 64px;
+    }
+
+    .calendar-header {
+      font-size: 14px;
+      color: var(--color-secondary);
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    .calendar-weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      margin-bottom: 8px;
+    }
+
+    .calendar-weekdays span {
+      text-align: center;
+      font-size: 12px;
+      color: var(--color-secondary);
+      font-weight: 500;
+    }
+
+    .calendar-weekdays span:first-child {
+      color: var(--color-brand);
+    }
+
+    .calendar-days {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+    }
+
+    .calendar-day {
+      text-align: center;
+      font-size: 13px;
+      color: var(--color-secondary);
+      padding: 6px 0;
+      border-radius: 8px;
+    }
+
+    .calendar-day.today {
+      background: linear-gradient(to right bottom, var(--color-brand), var(--color-brand-secondary));
+      color: #fff;
+      font-weight: 500;
+    }
+
+    /* 照片墙全屏弹窗 */
+    .photowall-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 150;
+      background: rgba(30, 30, 30, 0.85);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.5s ease;
+      overflow: hidden;
+    }
+
+    body.photowall-active .photowall-overlay {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .photowall-close {
+      position: fixed;
+      top: 24px;
+      right: 28px;
+      z-index: 160;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      color: #fff;
+      font-size: 22px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transform: scale(0.8);
+      transition: all 0.25s ease;
+    }
+
+    body.photowall-active .photowall-close {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .photowall-close:hover {
+      background: rgba(255, 255, 255, 0.25);
+      transform: scale(1.1);
+    }
+
+    .photowall-container {
+      position: absolute;
+      inset: 20px;
+      overflow: hidden;
+    }
+
+    .photo-item {
+      position: absolute;
+      padding: 8px;
+      background: #fff;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+      border-radius: 4px 4px 12px 4px;
+      cursor: grab;
+      user-select: none;
+      opacity: 0;
+      transform: scale(0.3) rotate(0deg);
+      transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+      z-index: 1;
+    }
+
+    .photo-item.show {
+      opacity: 1;
+    }
+
+    .photo-item.dragging {
+      cursor: grabbing;
+      z-index: 10;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+      transition: none;
+    }
+
+    .photo-item img {
+      display: block;
+      border-radius: 2px;
+      pointer-events: none;
+    }
+
+    /* 照片放大预览 */
+    .photo-zoom-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: rgba(0, 0, 0, 0.88);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      cursor: pointer;
+    }
+
+    .photo-zoom-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .photo-zoom-overlay img {
+      max-width: 90vw;
+      max-height: 90vh;
+      object-fit: contain;
+      border-radius: 8px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      transform: scale(0.8);
+      transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .photo-zoom-overlay.active img {
+      transform: scale(1);
+    }
+
+    /* 关于我页面 */
+    .about-detail {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.45s ease;
+    }
+
+    body.about-active .about-detail {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    body.study-active .about-detail {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .about-panel {
+      background: var(--color-card);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--color-border);
+      border-radius: 48px;
+      box-shadow:
+        0 40px 80px rgba(0, 0, 0, 0.12),
+        inset 0 0 20px rgba(255, 255, 255, 0.25);
+      padding: 48px;
+      max-width: 620px;
+      width: 90%;
+      max-height: 85vh;
+      overflow-y: auto;
+      transform: translateY(24px) scale(0.96);
+      transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
+    }
+
+    body.about-active .about-panel {
+      transform: translateY(0) scale(1);
+    }
+
+    .about-close {
+      position: absolute;
+      top: 20px;
+      right: 24px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.5);
+      border: 1px solid #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 18px;
+      color: var(--color-primary);
+      transition: all 0.25s ease;
+    }
+
+    .about-close:hover {
+      background: rgba(255, 255, 255, 0.8);
+      transform: rotate(90deg);
+    }
+
+    .about-avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      box-shadow: 0 12px 24px -5px #E2D9CE;
+      margin-bottom: 16px;
+    }
+
+    .about-name {
+      font-family: var(--font-averia);
+      font-size: 28px;
+      color: var(--color-primary);
+      margin-bottom: 4px;
+    }
+
+    .about-name .highlight {
+      background: linear-gradient(135deg, var(--color-brand), var(--color-brand-secondary));
+      -webkit-text-fill-color: transparent;
+      -webkit-background-clip: text;
+      background-clip: text;
+    }
+
+    .about-school {
+      font-size: 14px;
+      color: var(--color-secondary);
+      margin-bottom: 24px;
+    }
+
+    .about-section {
+      margin-bottom: 20px;
+    }
+
+    .about-section h3 {
+      font-size: 15px;
+      color: var(--color-brand);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .about-section h3 svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .about-section p {
+      font-size: 14px;
+      color: var(--color-primary);
+      line-height: 1.75;
+    }
+
+    .about-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 20px;
+    }
+
+    .about-tag {
+      padding: 5px 12px;
+      border-radius: 999px;
+      background: rgba(53, 191, 171, 0.1);
+      border: 1px solid rgba(53, 191, 171, 0.25);
+      color: var(--color-brand);
+      font-size: 12px;
+    }
+
+    /* 关于我模式 - 导航卡片过渡到左上角 */
+    body.about-active .nav-card,
+    body.study-active .nav-card,
+    body.works-active .nav-card {
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+    }
+
+    body.about-active .nav-avatar-wrap,
+    body.about-active .nav-site-name,
+    body.about-active .nav-menu,
+    body.about-active .nav-copyright {
+      transition: all 0.4s ease;
+    }
+
+    /* 紧凑导航栏 */
+    .compact-nav {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      z-index: 110;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(-12px);
+      transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+
+    body.about-active .compact-nav,
+    body.study-active .compact-nav,
+    body.works-active .compact-nav {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
+    }
+
+    .compact-nav-inner {
+      background: var(--color-card);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--color-border);
+      border-radius: 64px;
+      box-shadow:
+        0 20px 40px -16px rgba(0,0,0,0.06),
+        inset 0 0 20px rgba(255,255,255,0.25);
+      padding: 10px 24px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .compact-avatar {
+      width: 36px;
+      height: 36px;
+      flex-shrink: 0;
+    }
+
+    .compact-avatar svg {
+      width: 36px;
+      height: 36px;
+    }
+
+    .compact-name {
+      font-family: var(--font-averia);
+      font-size: 16px;
+      color: var(--color-primary);
+      white-space: nowrap;
+    }
+
+    .compact-menu {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .compact-nav-item {
+      font-size: 13px;
+      text-decoration: none;
+      color: var(--color-secondary);
+      padding: 5px 14px;
+      border-radius: 999px;
+      transition: all 0.25s ease;
+    }
+
+    .compact-nav-item:hover {
+      color: var(--color-brand);
+      background: rgba(53,191,171,0.08);
+    }
+
+    .compact-nav-item.active-item {
+      color: var(--color-brand);
+      background: rgba(53,191,171,0.12);
+      font-weight: 600;
+    }
+
+    /* 其他卡片在 about/study 模式隐藏 */
+    body.about-active .photo-card,
+    body.about-active .welcome-card,
+    body.about-active .social-bar,
+    body.about-active .clock-card,
+    body.about-active .calendar-card,
+    body.study-active .photo-card,
+    body.study-active .welcome-card,
+    body.study-active .social-bar,
+    body.study-active .clock-card,
+    body.study-active .calendar-card,
+    body.works-active .photo-card,
+    body.works-active .welcome-card,
+    body.works-active .social-bar,
+    body.works-active .clock-card,
+    body.works-active .calendar-card {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(12px);
+    }
+
+    /* 我的作品卡片在 about/study/works 模式隐藏 */
+    body.about-active .works-entry-card,
+    body.study-active .works-entry-card,
+    body.works-active .works-entry-card {
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+    }
+
+    /* 学习分享页面 */
+    .study-detail {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.45s ease;
+    }
+
+    body.study-active .study-detail {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    body.about-active .study-detail {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .study-panel {
+      background: var(--color-card);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--color-border);
+      border-radius: 48px;
+      box-shadow:
+        0 40px 80px rgba(0, 0, 0, 0.12),
+        inset 0 0 20px rgba(255, 255, 255, 0.25);
+      padding: 48px;
+      max-width: 620px;
+      width: 90%;
+      max-height: 85vh;
+      overflow-y: auto;
+      transform: translateY(24px) scale(0.96);
+      transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
+    }
+
+    body.study-active .study-panel {
+      transform: translateY(0) scale(1);
+    }
+
+    .study-close {
+      position: absolute;
+      top: 20px;
+      right: 24px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.5);
+      border: 1px solid #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 18px;
+      color: var(--color-primary);
+      transition: all 0.25s ease;
+      z-index: 10;
+    }
+
+    .study-close:hover {
+      background: rgba(255, 255, 255, 0.8);
+      transform: rotate(90deg);
+    }
+
+    .study-title {
+      font-family: var(--font-averia);
+      font-size: 28px;
+      color: var(--color-primary);
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .study-title .highlight {
+      background: linear-gradient(135deg, var(--color-brand), var(--color-brand-secondary));
+      -webkit-text-fill-color: transparent;
+      -webkit-background-clip: text;
+      background-clip: text;
+    }
+
+    .resource-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .resource-card {
+      background: rgba(255, 255, 255, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      border-radius: 24px;
+      padding: 20px 24px;
+      text-decoration: none;
+      color: var(--color-primary);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: transform 0.35s ease, box-shadow 0.35s ease, opacity 0.3s ease;
+      cursor: pointer;
+    }
+
+    body.study-active .resource-card {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    body.study-active .resource-card:nth-child(1) { transition-delay: 0.1s; }
+    body.study-active .resource-card:nth-child(2) { transition-delay: 0.2s; }
+
+    .resource-card:hover {
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 0 16px 36px -12px rgba(0,0,0,0.1);
+    }
+
+    .resource-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 16px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+
+    .resource-icon.cs {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+    }
+
+    .resource-icon.lc {
+      background: linear-gradient(135deg, #ff6b35, #ff9a76);
+    }
+
+    .resource-info h4 {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .resource-info span {
+      font-size: 13px;
+      color: var(--color-secondary);
+    }
+
+    .resource-arrow {
+      margin-left: auto;
+      color: var(--color-brand);
+      font-size: 18px;
+    }
+
+    /* 我的作品页面 */
+    .works-detail {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.45s ease;
+    }
+
+    body.works-active .works-detail {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    body.about-active .works-detail,
+    body.study-active .works-detail {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .works-panel {
+      background: var(--color-card);
+      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--color-border);
+      border-radius: 48px;
+      box-shadow:
+        0 40px 80px rgba(0, 0, 0, 0.12),
+        inset 0 0 20px rgba(255, 255, 255, 0.25);
+      padding: 40px 48px 32px;
+      max-width: 750px;
+      width: 92%;
+      max-height: 85vh;
+      overflow-y: auto;
+      transform: translateY(24px) scale(0.96);
+      transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
+    }
+
+    body.works-active .works-panel {
+      transform: translateY(0) scale(1);
+    }
+
+    .works-close {
+      position: absolute;
+      top: 20px;
+      right: 24px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.5);
+      border: 1px solid #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 18px;
+      color: var(--color-primary);
+      transition: all 0.25s ease;
+      z-index: 10;
+    }
+
+    .works-close:hover {
+      background: rgba(255, 255, 255, 0.8);
+      transform: rotate(90deg);
+    }
+
+    .works-title {
+      font-family: var(--font-averia);
+      font-size: 28px;
+      color: var(--color-primary);
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .works-title .highlight {
+      background: linear-gradient(135deg, var(--color-brand), var(--color-brand-secondary));
+      -webkit-text-fill-color: transparent;
+      -webkit-background-clip: text;
+      background-clip: text;
+    }
+
+    .works-categories {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .works-cat {
+      padding: 8px 20px;
+      border-radius: 999px;
+      border: 1px solid rgba(53, 191, 171, 0.3);
+      color: var(--color-secondary);
+      font-size: 13px;
+      cursor: pointer;
+      background: transparent;
+      transition: all 0.25s ease;
+    }
+
+    .works-cat:hover,
+    .works-cat.active {
+      background: linear-gradient(135deg, var(--color-brand), var(--color-brand-secondary));
+      color: #fff;
+      border-color: transparent;
+      box-shadow: 0 6px 18px rgba(53, 191, 171, 0.25);
+    }
+
+    .works-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      justify-content: center;
+    }
+
+    .work-video-card {
+      background: rgba(255, 255, 255, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      border-radius: 20px;
+      width: calc(33.333% - 11px);
+      min-width: 180px;
+      cursor: pointer;
+      opacity: 0;
+      transform: translateY(16px);
+      transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
+      color: var(--color-primary);
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .work-thumb {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      background: linear-gradient(135deg, #e8f5f3 0%, #d0efe9 50%, #c8e8f0 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .work-thumb video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: none;
+    }
+
+    .work-thumb .play-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0);
+      transition: background 0.3s ease;
+    }
+
+    .work-video-card:hover .play-overlay {
+      background: rgba(0,0,0,0.15);
+    }
+
+    .play-circle {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: rgba(53, 191, 171, 0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.3s ease, background 0.3s ease;
+      box-shadow: 0 4px 16px rgba(53, 191, 171, 0.3);
+    }
+
+    .work-video-card:hover .play-circle {
+      transform: scale(1.1);
+      background: rgba(53, 191, 171, 1);
+    }
+
+    .work-thumb-label {
+      position: absolute;
+      top: 10px;
+      left: 12px;
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      border-radius: 999px;
+      padding: 4px 12px;
+      font-size: 11px;
+      color: var(--color-primary);
+      font-weight: 600;
+    }
+
+    .work-thumb-icon {
+      font-size: 40px;
+      color: rgba(53, 191, 171, 0.4);
+    }
+
+    .work-video-info {
+      padding: 12px 16px;
+    }
+
+    .work-video-info h4 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .work-video-info span {
+      font-size: 12px;
+      color: var(--color-secondary);
+    }
+
+    body.works-active .work-video-card {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    body.works-active .work-video-card:nth-child(1) { transition-delay: 0.08s; }
+    body.works-active .work-video-card:nth-child(2) { transition-delay: 0.14s; }
+    body.works-active .work-video-card:nth-child(3) { transition-delay: 0.20s; }
+    body.works-active .work-video-card:nth-child(4) { transition-delay: 0.26s; }
+    body.works-active .work-video-card:nth-child(5) { transition-delay: 0.32s; }
+    body.works-active .work-video-card:nth-child(6) { transition-delay: 0.38s; }
+
+    .work-video-card:hover {
+      transform: translateY(-4px) scale(1.03);
+      box-shadow: 0 16px 32px -12px rgba(0,0,0,0.1);
+    }
+
+    .work-video-arrow {
+      display: none;
+    }
+
+    .work-video-icon {
+      display: none;
+    }
+
+    /* 视频播放弹窗 */
+    .video-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: rgba(0,0,0,0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.35s ease;
+    }
+
+    .video-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .video-player-wrap {
+      position: relative;
+      width: 90%;
+      max-width: 800px;
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: 0 40px 80px rgba(0,0,0,0.3);
+      background: #000;
+    }
+
+    .video-player-wrap video {
+      width: 100%;
+      display: block;
+    }
+
+    .video-player-close {
+      position: absolute;
+      top: 12px;
+      right: 16px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      border: none;
+      color: #fff;
+      font-size: 20px;
+      cursor: pointer;
+      transition: background 0.25s ease;
+      z-index: 10;
+    }
+
+    .video-player-close:hover {
+      background: rgba(255,255,255,0.4);
+    }
+
+    /* Toast 提示 */
+    .toast {
+      position: fixed;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--color-brand);
+      color: #fff;
+      padding: 10px 24px;
+      border-radius: 999px;
+      font-size: 14px;
+      z-index: 200;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      box-shadow: 0 8px 24px rgba(53, 191, 171, 0.3);
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* 响应式 */
+    @media (max-width: 1100px) {
+      .board-inner {
+        width: 100%;
+        height: auto;
+      }
+      .card,
+      .social-bar {
+        position: static;
+        width: 100% !important;
+        height: auto !important;
+        margin-bottom: 20px;
+      }
+      .main-board {
+        padding: 24px 16px;
+      }
+      .board-inner {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0;
+      }
+      .social-bar {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin-bottom: 20px;
+      }
+      .photo-card {
+        min-height: 220px;
+      }
+      .clock-inner {
+        padding: 20px;
+      }
+      .like-btn {
+        align-self: center;
+        margin: 0 auto 20px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .card {
+        border-radius: 32px;
+        padding: 18px;
+      }
+      .greeting {
+        font-size: 18px;
+      }
+      .greeting .name {
+        font-size: 24px;
+      }
+      .clock-time {
+        font-size: 28px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-layer">
+    <canvas id="bg-canvas"></canvas>
+  </div>
+
+  <!-- 紧凑导航栏（关于我页面显示） -->
+  <div class="compact-nav" id="compact-nav">
+    <div class="compact-nav-inner">
+      <div class="compact-menu">
+        <a href="javascript:void(0)" class="compact-nav-item" onclick="closeAbout(); closeStudy(); closeWorks(); document.body.classList.remove('about-active','study-active','works-active');" data-nav="home">首页</a>
+        <a href="https://github.com/NaPF6-TechOtakus?tab=repositories" target="_blank" class="compact-nav-item" data-nav="project">我的项目</a>
+        <a href="javascript:void(0)" class="compact-nav-item" onclick="openAbout()" data-nav="about">关于我</a>
+        <a href="javascript:void(0)" class="compact-nav-item" onclick="openStudy()" data-nav="study">学习分享</a>
+      </div>
+    </div>
+  </div>
+
+  <main class="main-board">
+    <div class="board-inner">
+      <!-- 左侧导航卡片 -->
+      <aside class="card nav-card">
+        <div class="nav-header">
+          <img src="images/246793329.jpg" alt="头像" class="nav-avatar">
+          <div>
+            <div class="nav-site-name">NaPF6-Home</div>
+            <div class="nav-status">(开发中)</div>
+          </div>
+        </div>
+        <div class="nav-label">GENERAL</div>
+        <nav class="nav-menu">
+          <div class="nav-highlight" id="nav-highlight"></div>
+          <a href="#welcome" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            首页
+          </a>
+          <a href="https://github.com/NaPF6-TechOtakus?tab=repositories" target="_blank" class="nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            我的项目
+          </a>
+          <a href="javascript:void(0)" class="nav-item" onclick="openAbout()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            关于我
+          </a>
+          <a href="javascript:void(0)" class="nav-item" onclick="openStudy()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            学习分享
+          </a>
+        </nav>
+      </aside>
+
+      <!-- 照片墙 -->
+      <div class="card photo-card" onclick="openPhotowall()">
+        <img src="images/540f3748c1f9bac23e5bc67681c0dfdf626510519.jpg" alt="照片墙">
+      </div>
+
+      <!-- 欢迎卡片 -->
+      <div class="card welcome-card" id="welcome">
+        <img src="images/246793329.jpg" alt="NaPF6 的头像" class="welcome-avatar">
+        <h1 class="greeting">
+          <span id="greeting-text">Good Afternoon</span><br>
+          I'm <span class="name text-linear">NaPF6</span>, Nice to<br>
+          meet you!
+        </h1>
+      </div>
+
+      <!-- 社交链接条 -->
+      <div class="social-bar">
+        <a href="https://github.com/NaPF6-TechOtakus" target="_blank" class="social-btn github">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+          GitHub
+        </a>
+        <a href="javascript:void(0)" class="social-btn social-icon-btn" onclick="copyEmail()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        </a>
+      </div>
+
+      <!-- Toast 提示 -->
+      <div class="toast" id="toast">邮箱已复制到剪切板</div>
+
+      <!-- 时钟 -->
+      <div class="card clock-card">
+        <div class="clock-inner">
+          <div class="clock-time" id="clock">00:00</div>
+        </div>
+      </div>
+
+      <!-- 日历 -->
+      <div class="card calendar-card">
+        <div class="calendar-header" id="calendar-header">2026/7/5 周日</div>
+        <div class="calendar-weekdays">
+          <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+        </div>
+        <div class="calendar-days" id="calendar-days"></div>
+      </div>
+
+      <!-- 我的作品入口卡片 -->
+      <div class="card works-entry-card" onclick="openWorks()">
+        <div class="works-entry-inner">
+          <div class="works-entry-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          </div>
+          <div class="works-entry-label">我的作品</div>
+          <div class="works-entry-hint">点击查看视频作品</div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- 照片墙弹窗 -->
+  <div class="photowall-overlay" id="photowall-overlay" onclick="closePhotowall()">
+    <button class="photowall-close" onclick="event.stopPropagation(); closePhotowall()">&times;</button>
+    <div class="photowall-container" id="photowall-container" onclick="event.stopPropagation()"></div>
+  </div>
+
+  <!-- 关于我详情页 -->
+  <div class="about-detail" id="about-detail" onclick="closeAbout()">
+    <div class="about-panel" onclick="event.stopPropagation()">
+      <button class="about-close" onclick="closeAbout()">&times;</button>
+      <div style="text-align: center;">
+        <img src="images/246793329.jpg" alt="头像" class="about-avatar">
+        <div class="about-name">About <span class="highlight">NaPF6</span></div>
+        <div class="about-school">西北工业大学 · 教育实验学院 · 人工智能方向</div>
+      </div>
+
+      <div class="about-section">
+        <h3>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          个人简介
+        </h3>
+        <p>
+          I'm NaPF6，NPU的一位HCer。"技术宅拯救世界"is my slogan。
+          长远目标是把"二次元老婆完美复刻到现实"——Embodied AI or VR。
+          为了实现这个目标，我正在深耕人工智能、计算机图形学和游戏开发三大领域。
+        </p>
+      </div>
+
+      <div class="about-section">
+        <h3>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+          学习经历
+        </h3>
+        <p>
+          <strong>西北工业大学</strong>（2025 - 至今）<br>
+          教育实验学院 · 人工智能方向 · 大一在读
+        </p>
+        
+      </div>
+
+      <div class="about-section">
+        <h3>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 0 1 7.843 4.582M12 3a8.997 8.997 0 0 0-7.843 4.582m15.686 0A11.953 11.953 0 0 1 12 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0 1 21 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0 1 12 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 0 1 3 12c0-1.605.42-3.113 1.157-4.418"/></svg>
+          技术方向
+        </h3>
+        <p>
+          <strong>AI 角色智能</strong>：LLM、NLP、多模态<br>
+          <strong>计算机图形学</strong>：渲染、动画、实时角色表情与动作绑定<br>
+          <strong>多模态交互</strong>：语音、视觉、触觉融合的自然人机交互<br>
+          <strong>游戏开发</strong>：Unity/Unreal 引擎、实时物理模拟
+        </p>
+      </div>
+
+      <div class="about-section">
+        <h3>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          未来规划
+        </h3>
+        <p>
+          <strong>短期（大一-大二）</strong>：打好数学与编程基础，学习 DL/图形学，进入实验室参与科研<br>
+          <strong>中期（大三-大四）</strong>：，积累成果，发表Paper<br>
+          <strong>长期</strong>：进入顶尖高校深造，最终加入米哈游等团队，做 AI 驱动的虚拟角色核心技术
+        </p>
+      </div>
+
+      <div class="about-tags">
+        <span class="about-tag">AI 角色智能</span>
+        <span class="about-tag">多模态交互</span>
+        <span class="about-tag">计算机图形学</span>
+        <span class="about-tag">米哈游</span>
+        <span class="about-tag">技术宅拯救世界</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 学习分享详情页 -->
+  <div class="study-detail" id="study-detail" onclick="closeStudy()">
+    <div class="study-panel" onclick="event.stopPropagation()">
+      <button class="study-close" onclick="closeStudy()">&times;</button>
+      <div class="study-title">学习<span class="highlight">分享</span></div>
+      <div class="resource-grid">
+        <a href="https://csdiy.wiki/" target="_blank" class="resource-card">
+          <div class="resource-icon cs">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+          </div>
+          <div class="resource-info">
+            <h4>CS 自学指南</h4>
+            <span>csdiy.wiki — 国内外 CS 自学课程全收录，名校公开课一站导航</span>
+          </div>
+          <span class="resource-arrow">→</span>
+        </a>
+
+        <a href="https://github.com/EndlessCheng/codeforces-go" target="_blank" class="resource-card">
+          <div class="resource-icon lc">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          </div>
+          <div class="resource-info">
+            <h4>灵茶山艾府 · 算法题单</h4>
+            <span>Codeforces 题单 + LeetCode 刷题路线，ACM 金牌选手整理</span>
+          </div>
+          <span class="resource-arrow">→</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- 我的作品详情页 -->
+  <div class="works-detail" id="works-detail" onclick="closeWorks()">
+    <div class="works-panel" onclick="event.stopPropagation()">
+      <button class="works-close" onclick="closeWorks()">&times;</button>
+      <div class="works-title">我的<span class="highlight">作品</span></div>
+      <div class="works-categories">
+        <span class="works-cat active" data-cat="ds">数据结构</span>
+        <span class="works-cat" data-cat="ai">AI</span>
+        <span class="works-cat" data-cat="graphics">图形学</span>
+        <span class="works-cat" data-cat="game">游戏开发</span>
+      </div>
+      <div class="works-grid" id="works-grid">
+        <a href="javascript:void(0)" class="work-video-card" data-cat="ds" onclick="playVideo('video/大黑塔讲线性表.mp4')">
+          <div class="work-thumb">
+            <span class="work-thumb-label">数据结构</span>
+            <div class="play-overlay">
+              <div class="play-circle">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><polygon points="6,3 20,12 6,21"/></svg>
+              </div>
+            </div>
+          </div>
+          <div class="work-video-info">
+            <h4>大黑塔讲线性表</h4>
+            <span>线性表</span>
+          </div>
+        </a>
+        <a href="javascript:void(0)" class="work-video-card" data-cat="ds" onclick="playVideo('video/三月七讲栈和队列.mp4')">
+          <div class="work-thumb">
+            <span class="work-thumb-label">数据结构</span>
+            <div class="play-overlay">
+              <div class="play-circle">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><polygon points="6,3 20,12 6,21"/></svg>
+              </div>
+            </div>
+          </div>
+          <div class="work-video-info">
+            <h4>三月七讲栈和队列</h4>
+            <span>栈与队列</span>
+          </div>
+        </a>
+        <a href="javascript:void(0)" class="work-video-card" data-cat="ds" onclick="playVideo('video/纳西妲讲二叉树.mp4')">
+          <div class="work-thumb">
+            <span class="work-thumb-label">数据结构</span>
+            <div class="play-overlay">
+              <div class="play-circle">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><polygon points="6,3 20,12 6,21"/></svg>
+              </div>
+            </div>
+          </div>
+          <div class="work-video-info">
+            <h4>纳西妲讲二叉树</h4>
+            <span>二叉树</span>
+          </div>
+        </a>
+        <a href="javascript:void(0)" class="work-video-card" data-cat="ds" onclick="playVideo('video/诗歌剧讲查找.mp4')">
+          <div class="work-thumb">
+            <span class="work-thumb-label">数据结构</span>
+            <div class="play-overlay">
+              <div class="play-circle">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><polygon points="6,3 20,12 6,21"/></svg>
+              </div>
+            </div>
+          </div>
+          <div class="work-video-info">
+            <h4>诗歌剧讲查找</h4>
+            <span>查找算法</span>
+          </div>
+        </a>
+        <a href="javascript:void(0)" class="work-video-card" data-cat="ds" onclick="playVideo('video/钟离说图论.mp4')">
+          <div class="work-thumb">
+            <span class="work-thumb-label">数据结构</span>
+            <div class="play-overlay">
+              <div class="play-circle">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><polygon points="6,3 20,12 6,21"/></svg>
+              </div>
+            </div>
+          </div>
+          <div class="work-video-info">
+            <h4>钟离说图论</h4>
+            <span>图论</span>
+          </div>
+        </a>
+        <a href="javascript:void(0)" class="work-video-card" data-cat="ds" onclick="playVideo('video/银狼讲字符串匹配.mp4')">
+          <div class="work-thumb">
+            <span class="work-thumb-label">数据结构</span>
+            <div class="play-overlay">
+              <div class="play-circle">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><polygon points="6,3 20,12 6,21"/></svg>
+              </div>
+            </div>
+          </div>
+          <div class="work-video-info">
+            <h4>银狼讲字符串匹配</h4>
+            <span>字符串匹配</span>
+          </div>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- 照片放大预览 -->
+  <div class="photo-zoom-overlay" id="photo-zoom-overlay" onclick="closePhotoZoom()">
+    <img id="photo-zoom-img" src="" alt="" />
+  </div>
+
+  <!-- 视频播放弹窗 -->
+  <div class="video-overlay" id="video-overlay" onclick="closeVideo()">
+    <div class="video-player-wrap" onclick="event.stopPropagation()">
+      <button class="video-player-close" onclick="closeVideo()">&times;</button>
+      <video id="video-player" controls playsinline></video>
+    </div>
+  </div>
+
+  <script>
+    // 页面加载时卡片徐徐展开动画
+    (function() {
+      var cards = document.querySelectorAll('.board-inner > .card');
+      cards.forEach(function(card, i) {
+        setTimeout(function() {
+          card.classList.add('entered');
+        }, 80 + i * 120);
+      });
+      // social-bar 没有 card class，单独处理
+      var social = document.querySelector('.social-bar');
+      if (social) {
+        social.style.opacity = '0';
+        social.style.transform = 'scale(0.92) translateY(24px)';
+        setTimeout(function() {
+          social.style.transition = 'opacity 0.55s ease, transform 0.55s cubic-bezier(0.34, 1.56, 0.64, 1)';
+          social.style.opacity = '1';
+          social.style.transform = 'scale(1) translateY(0)';
+          // 动画完成后清除内联样式，否则 CSS class 规则（如 body.study-active .social-bar）被内联样式覆盖
+          setTimeout(function() {
+            social.style.opacity = '';
+            social.style.transform = '';
+            social.style.transition = '';
+          }, 600);
+        }, 80 + cards.length * 120);
+      }
+    })();
+
+    // 动态问候语和时钟
+    function updateTime() {
+      const now = new Date();
+      const hour = now.getHours();
+      let greeting = 'Good night';
+      if (hour >= 5 && hour < 12) greeting = 'Good morning';
+      else if (hour >= 12 && hour < 17) greeting = 'Good afternoon';
+      else if (hour >= 17 && hour < 22) greeting = 'Good evening';
+      document.getElementById('greeting-text').textContent = greeting;
+
+      const timeStr = now.toLocaleTimeString('zh-CN', { hour12: false, hour: '2-digit', minute: '2-digit' });
+      document.getElementById('clock').textContent = timeStr;
+
+      // 日历头部
+      const year = now.getFullYear();
+      const month = now.getMonth() + 1;
+      const day = now.getDate();
+      const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+      document.getElementById('calendar-header').textContent = `${year}/${month}/${day} ${weekdays[now.getDay()]}`;
+    }
+    updateTime();
+    setInterval(updateTime, 1000);
+
+    // 生成日历
+    function renderCalendar() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth();
+      const today = now.getDate();
+      const firstDay = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+      const container = document.getElementById('calendar-days');
+      container.innerHTML = '';
+
+      for (let i = 0; i < firstDay; i++) {
+        const empty = document.createElement('div');
+        container.appendChild(empty);
+      }
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dayEl = document.createElement('div');
+        dayEl.className = 'calendar-day';
+        dayEl.textContent = d;
+        if (d === today) dayEl.classList.add('today');
+        container.appendChild(dayEl);
+      }
+    }
+    renderCalendar();
+
+    // 左侧导航菜单滑动高光
+    (function() {
+      var menu = document.querySelector('.nav-menu');
+      var highlight = document.getElementById('nav-highlight');
+      var items = menu.querySelectorAll('.nav-item');
+      if (!highlight || items.length === 0) return;
+      var lastItem = items[0];
+
+      function updateHighlight(item) {
+        var menuRect = menu.getBoundingClientRect();
+        var itemRect = item.getBoundingClientRect();
+        highlight.style.top = (itemRect.top - menuRect.top) + 'px';
+        highlight.style.height = (itemRect.bottom - itemRect.top) + 'px';
+        lastItem = item;
+      }
+
+      // 默认高亮第一个
+      updateHighlight(items[0]);
+
+      items.forEach(function(item) {
+        item.addEventListener('mouseenter', function() {
+          updateHighlight(item);
+        });
+      });
+    })();
+
+    // 紧凑导航高亮切换
+    function setCompactActive(name) {
+      document.querySelectorAll('.compact-nav-item').forEach(function(item) {
+        item.classList.remove('active-item');
+        if (item.getAttribute('data-nav') === name) item.classList.add('active-item');
+      });
+    }
+
+    // 关于我页面
+    function openAbout() {
+      document.body.classList.remove('study-active');
+      document.body.classList.remove('works-active');
+      document.body.classList.add('about-active');
+      setCompactActive('about');
+    }
+
+    function closeAbout() {
+      document.body.classList.remove('about-active');
+      setCompactActive('home');
+    }
+
+    // 学习分享页面
+    function openStudy() {
+      document.body.classList.remove('about-active');
+      document.body.classList.remove('works-active');
+      document.body.classList.add('study-active');
+      setCompactActive('study');
+    }
+
+    function closeStudy() {
+      document.body.classList.remove('study-active');
+      setCompactActive('home');
+    }
+
+    // 我的作品页面
+    function openWorks() {
+      document.body.classList.remove('about-active');
+      document.body.classList.remove('study-active');
+      document.body.classList.add('works-active');
+      setCompactActive('works');
+      // 默认显示数据结构
+      filterWorks('ds');
+      document.querySelectorAll('.works-cat').forEach(function(cat) {
+        cat.classList.remove('active');
+        if (cat.getAttribute('data-cat') === 'ds') cat.classList.add('active');
+      });
+    }
+
+    function closeWorks() {
+      document.body.classList.remove('works-active');
+      setCompactActive('home');
+    }
+
+    // 分类筛选
+    function filterWorks(cat) {
+      var cards = document.querySelectorAll('.work-video-card');
+      cards.forEach(function(card) {
+        if (card.getAttribute('data-cat') === cat) {
+          card.style.display = 'flex';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    }
+
+    // 分类按钮事件
+    document.querySelectorAll('.works-cat').forEach(function(cat) {
+      cat.addEventListener('click', function() {
+        document.querySelectorAll('.works-cat').forEach(function(c) { c.classList.remove('active'); });
+        cat.classList.add('active');
+        filterWorks(cat.getAttribute('data-cat'));
+      });
+    });
+
+    // 视频播放
+    function playVideo(src) {
+      var overlay = document.getElementById('video-overlay');
+      var player = document.getElementById('video-player');
+      player.src = src;
+      overlay.classList.add('active');
+      player.play();
+    }
+
+    function closeVideo() {
+      var overlay = document.getElementById('video-overlay');
+      var player = document.getElementById('video-player');
+      overlay.classList.remove('active');
+      player.pause();
+      player.src = '';
+    }
+
+    // 照片墙
+    var photoImages = [
+      'images/60609628ADB270A0C48241D0EA519A8F.jpg',
+      'images/0C433F0702A58854AF74CA28D14F0849.png',
+      'images/4C03BAE71597DFC405A6D3C49D5460F2.jpeg',
+      'images/83F5ED335B4CEB320D0E58D4BA726C0B.jpeg',
+      'images/A8E3EEC987B1145423F15D35FF19612B.png',
+      'images/AC53F7111F15FF7C8EB8E9BAA9EDDA12.jpg',
+      'images/540f3748c1f9bac23e5bc67681c0dfdf626510519.jpg',
+      'images/71ec4c4a7e16f10768d39fd80652fb5d12801524.jpg',
+      'images/The Hungry Lamb 2026_7_5 22_57_58.png'
+    ];
+
+    function openPhotowall() {
+      document.body.classList.add('photowall-active');
+      var container = document.getElementById('photowall-container');
+      container.innerHTML = '';
+      var containerW = container.clientWidth;
+      var containerH = container.clientHeight;
+
+      // 为每张图片随机生成位置和旋转角
+      var usedPositions = [];
+      photoImages.forEach(function(src, i) {
+        var el = document.createElement('div');
+        el.className = 'photo-item';
+        el.setAttribute('data-index', i);
+        el.draggable = false;
+
+        var img = document.createElement('img');
+        img.src = src;
+        img.draggable = false;
+
+        // 限制图片尺寸
+        var maxW = Math.min(containerW * 0.32, 300);
+        var maxH = Math.min(containerH * 0.35, 260);
+        img.style.maxWidth = maxW + 'px';
+        img.style.maxHeight = maxH + 'px';
+
+        el.appendChild(img);
+        container.appendChild(el);
+
+        // 等图片加载后随机定位
+        img.onload = (function(item, idx) {
+          return function() {
+            var w = item.offsetWidth;
+            var h = item.offsetHeight;
+
+            // 随机位置（避免重叠太多）
+            var left, top, tries = 0;
+            do {
+              left = Math.random() * (containerW - w - 20) + 10;
+              top = Math.random() * (containerH - h - 20) + 10;
+              tries++;
+            } while (tries < 30 && isTooClose(left, top, w, h, usedPositions));
+
+            usedPositions.push({ left: left, top: top, width: w, height: h });
+
+            item.style.left = left + 'px';
+            item.style.top = top + 'px';
+
+            // 随机旋转 -15到15度（避免0附近）
+            var rot = (Math.random() - 0.5) * 30;
+            if (Math.abs(rot) < 3) rot = rot > 0 ? 8 : -8;
+            item.style.transform = 'scale(0.3) rotate(' + rot + 'deg)';
+
+            // 逐张渲染：前一张发出后延迟再发下一张
+            setTimeout(function() {
+              item.classList.add('show');
+              item.style.transform = 'rotate(' + rot + 'deg)';
+            }, idx * 350);
+
+            // 拖动事件（同时检测点击：没拖动就是单击）
+            item.addEventListener('mousedown', function(e) {
+              e.preventDefault();
+              var startX = e.clientX;
+              var startY = e.clientY;
+              var origLeft = parseFloat(item.style.left) || 0;
+              var origTop = parseFloat(item.style.top) || 0;
+              var dragged = false;
+              item.classList.add('dragging');
+
+              function onMove(ev) {
+                var dx = ev.clientX - startX;
+                var dy = ev.clientY - startY;
+                if (Math.abs(dx) > 3 || Math.abs(dy) > 3) dragged = true;
+                item.style.left = (origLeft + dx) + 'px';
+                item.style.top = (origTop + dy) + 'px';
+              }
+
+              function onUp() {
+                item.classList.remove('dragging');
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup', onUp);
+                if (!dragged) {
+                  zoomPhoto(src);
+                }
+              }
+
+              document.addEventListener('mousemove', onMove);
+              document.addEventListener('mouseup', onUp);
+            });
+          };
+        })(el, i);
+      });
+    }
+
+    function isTooClose(x, y, w, h, used) {
+      for (var i = 0; i < used.length; i++) {
+        var u = used[i];
+        var cx1 = x + w / 2, cy1 = y + h / 2;
+        var cx2 = u.left + u.width / 2, cy2 = u.top + u.height / 2;
+        var maxDist = Math.max(w, h, u.width, u.height) * 1.2;
+        if (Math.abs(cx1 - cx2) < maxDist && Math.abs(cy1 - cy2) < maxDist) return true;
+      }
+      return false;
+    }
+
+    function closePhotowall() {
+      document.body.classList.remove('photowall-active');
+    }
+
+    function zoomPhoto(src) {
+      var overlay = document.getElementById('photo-zoom-overlay');
+      var img = document.getElementById('photo-zoom-img');
+      img.src = src;
+      overlay.classList.add('active');
+    }
+
+    function closePhotoZoom() {
+      var overlay = document.getElementById('photo-zoom-overlay');
+      overlay.classList.remove('active');
+    }
+
+    // ESC 键返回首页
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        document.body.classList.remove('about-active');
+        document.body.classList.remove('study-active');
+        document.body.classList.remove('works-active');
+        closePhotowall();
+        closePhotoZoom();
+        closeVideo();
+      }
+    });
+
+    // 复制邮箱到剪切板
+    function copyEmail() {
+      navigator.clipboard.writeText('2964942202@qq.com').then(function() {
+        var toast = document.getElementById('toast');
+        toast.classList.add('show');
+        setTimeout(function() {
+          toast.classList.remove('show');
+        }, 2000);
+      });
+    }
+
+    // Canvas 气泡背景
+    const canvas = document.getElementById('bg-canvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+    let blobs = [];
+    const colors = ['#EDDD62', '#9EE7D1', '#84D68A', '#EDDD62', '#88E6E5', '#a7f3d0'];
+
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    }
+
+    function initBlobs() {
+      blobs = [];
+      for (let i = 0; i < 6; i++) {
+        blobs.push({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          r: 250 + Math.random() * 150,
+          color: colors[i % colors.length],
+          vx: (Math.random() - 0.5) * 0.3,
+          vy: (Math.random() - 0.5) * 0.3,
+          phase: Math.random() * Math.PI * 2
+        });
+      }
+    }
+
+    function drawBlobs() {
+      ctx.clearRect(0, 0, width, height);
+      ctx.fillStyle = '#eeeeee';
+      ctx.fillRect(0, 0, width, height);
+
+      blobs.forEach(blob => {
+        blob.x += blob.vx;
+        blob.y += blob.vy;
+        blob.phase += 0.005;
+
+        // 边界反弹
+        if (blob.x < -blob.r) blob.x = width + blob.r;
+        if (blob.x > width + blob.r) blob.x = -blob.r;
+        if (blob.y < -blob.r) blob.y = height + blob.r;
+        if (blob.y > height + blob.r) blob.y = -blob.r;
+
+        const r = blob.r + Math.sin(blob.phase) * 30;
+
+        ctx.save();
+        ctx.filter = 'blur(120px)';
+        ctx.globalAlpha = 0.7;
+        ctx.beginPath();
+        ctx.arc(blob.x, blob.y, r, 0, Math.PI * 2);
+        ctx.fillStyle = blob.color;
+        ctx.fill();
+        ctx.restore();
+      });
+
+      requestAnimationFrame(drawBlobs);
+    }
+
+    resize();
+    initBlobs();
+    drawBlobs();
+    window.addEventListener('resize', () => {
+      resize();
+      initBlobs();
+    });
+  </script>
+</body>
+</html>
